@@ -1,8 +1,14 @@
-public class StunServer {
-    private ICEServer ice;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketException;
+import java.util.logging.Logger;
 
-    public StunServer(ICEServer ice) {
-        this.ice = ice;
+public class StunServer {
+    private ICEServer iceServer;
+    private static final Logger LOGGER = Logger.getLogger(StunServer.class.getName());
+
+    public StunServer(ICEServer iceServer) {
+        this.iceServer = iceServer;
     }
 
     public void start() {
@@ -13,6 +19,16 @@ public class StunServer {
         //First request
             //DNS discovery
         //is subsequent request necessary?
+
+        while(true) {
+            try {
+                DatagramSocket receive = new DatagramSocket();
+            } catch(SocketException e) {
+                String msg = "Could not create socket: ";
+                System.out.println(msg + e.getMessage());
+                LOGGER.warning(msg + e.getMessage());
+            }
+        }
     }
 
     public void bindingRequest() {}

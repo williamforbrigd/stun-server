@@ -7,4 +7,7 @@ public class ICEServer {
     private int defaultPort = 3478; //Default port for STUN requests is 3478 for UDP and TCP. Burde bruke denne porten
     //når man lager en egen STUN server.
     private int defaultPortTls = 5349;
+
+    public ICEServer() {
+    }
 }
