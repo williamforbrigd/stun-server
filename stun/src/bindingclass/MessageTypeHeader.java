@@ -5,6 +5,6 @@ package bindingclass;
  * and the method.
  */
 public class MessageTypeHeader {
-    public enum MessageTypeClass {BindingRequest, BindingResponse, ErrorResponse, Indication};
+    private enum MessageTypeClass {BindingRequest, BindingResponse, ErrorResponse, Indication};
     
 }
