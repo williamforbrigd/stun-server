@@ -1,39 +1,30 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.logging.Logger;
 
 public class StunServer {
-    private static final Logger LOGGER = Logger.getLogger(StunServer.class.getName());
-    private ICEServer iceServer;
     private DatagramSocket serverSocket;
+    private InetAddress address;
+    private int port = 1250;
+    byte[] buffer;
 
-    public StunServer(ICEServer iceServer, DatagramSocket serverSocket) {
-        this.iceServer = iceServer;
-        this.serverSocket = serverSocket;
+    public StunServer(int bufferLength) throws SocketException {
+        serverSocket= new DatagramSocket(port);
+        buffer = new byte[bufferLength];
     }
 
-    public StunServer() {}
+    public void runServer() throws IOException {
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+        serverSocket.receive(packet);
+        System.out.println("Client connected successfully");
 
-    public void start() {
-        while(true) {
-            try {
-                byte[] buffer = new byte[576];
-                DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
-                serverSocket.receive(receivePacket);
-                System.out.println(receivePacket.getData());
-            } catch(IOException e) {
-                String msg = "Could not receive packet: " + e.getMessage();
-                LOGGER.warning(msg);
-                System.out.println(msg);
-            }
-        }
+        address = packet.getAddress();
+        port = packet.getPort();
+        buffer = "Enter in the format \"1 + 2\". Press enter to exit".getBytes();
+        packet = new DatagramPacket(buffer, buffer.length, address, port);
+        serverSocket.send(packet);
+
     }
-
-    public static void main(String[] args) {
-        StunServer server = new StunServer();
-        server.start();
-    }
-
 }
