@@ -1,7 +1,7 @@
-import java.math.BigInteger;
+package message;
 
 /**
- * Class for StunMessage
+ * Class for message.StunMessage
  */
 public class StunMessage {
     private int messageType;
@@ -9,6 +9,8 @@ public class StunMessage {
     private int magicCookie;
     private int transactionID;
     private MessageTypeClass messageTypeClass;
+
+    public static final int BUFFER_LENGTH = 160;
 
 
     private enum MessageTypeClass {BINDING_REQUEST, INDICATION, SUCCESS_RESPONSE, ERROR_RESPONSE};
@@ -24,6 +26,8 @@ public class StunMessage {
         this.messageLength = messageLength;
     }
 
+    public StunMessage() {}
+
     public MessageTypeClass findMessageType(int messageType) {
         if((messageType & 0x0110) == 0x0000) return MessageTypeClass.BINDING_REQUEST;
         else if((messageType & 0x0110) == 0x0010) return MessageTypeClass.INDICATION;
@@ -37,5 +41,15 @@ public class StunMessage {
      */
     public void setTransactionID(int transactionID) {
         this.transactionID = transactionID;
+    }
+
+    public static String byteToString(byte[] buffer) {
+        String str = "";
+        int i=0;
+        while(buffer[i] != 0) {
+            str += (char)buffer[i];
+            i++;
+        }
+        return str;
     }
 }
