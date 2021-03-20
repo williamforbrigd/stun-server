@@ -3,7 +3,6 @@ test_jstun/
 stun/.idea
 stun/stun.iml
 stun/out
-<<<<<<< HEAD
+node_modules
+package-lock.json
 
-=======
->>>>>>> stun
