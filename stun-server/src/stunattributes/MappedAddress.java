@@ -11,6 +11,7 @@ public class MappedAddress extends StunAttribute {
     private int addressFamilyValue;
     private int port;
     private InetAddress inetAddress;
+    private String address;
 
     public MappedAddress(AddressFamily addressFamily, int port, InetAddress inetAddress) {
         super();
@@ -22,6 +23,22 @@ public class MappedAddress extends StunAttribute {
         this.port = port;
         this.inetAddress = inetAddress;
     }
+
+    public String encodeToBinaryString() {
+        return convertStringToBinary(address);
+    }
+
+
+    public String convertStringToBinary(String str) {
+        StringBuilder res = new StringBuilder();
+        char[] chars = str.toCharArray();
+        for(char c : chars) {
+            res.append(String.format("%8s", Integer.toBinaryString(c)).replaceAll(" ", 0));
+        }
+        return res.toString();
+    }
+
+
 
     public static BitSet convert(long value) {
         BitSet bits = new BitSet();

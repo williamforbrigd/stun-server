@@ -1,8 +1,11 @@
 package client;
 
+import message.StunMessage;
+
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.BitSet;
 
 /**
  * STUN client that is connected to the private network.
@@ -54,6 +57,10 @@ public class StunClient {
     public void start() throws IOException {
         System.out.println(privateAddress);
         System.out.println(privatePort);
+
+        //Send binding request
+        StunMessage bindingRequest = new StunMessage(StunMessage.MessageTypeClass.BINDING_REQUEST);
+
         byte[] buffer = "hei hva skjer".getBytes(StandardCharsets.UTF_8);
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, privateAddress, 1251);
         socket.send(packet);

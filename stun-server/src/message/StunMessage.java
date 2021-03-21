@@ -1,5 +1,7 @@
 package message;
 
+import stunattributes.StunAttribute;
+
 /**
  * Class for message.StunMessage
  *
@@ -31,11 +33,6 @@ public class StunMessage {
 
     public enum MessageTypeClass {BINDING_REQUEST, INDICATION, SUCCESS_RESPONSE, ERROR_RESPONSE};
 
-    /**
-     * TODO: check that the 2 first bytes are 0 and also check that the other attributes are of correct byte length.
-     * @param messageType
-     * @param messageLength
-     */
     public StunMessage(int messageType, int messageLength) {
         this.messageType = messageType;
         this.messageTypeClass = findMessageType(messageType);
@@ -48,12 +45,17 @@ public class StunMessage {
 
     public StunMessage(MessageTypeClass messageTypeClass) {
         this.messageTypeClass = messageTypeClass;
+        buffer = new byte[20];
     }
 
     public StunMessage() {}
 
     public MessageTypeClass getMessageTypeClass() {
         return this.messageTypeClass;
+    }
+
+    public byte[] getBuffer() {
+        return this.buffer;
     }
 
     public MessageTypeClass findMessageType(int messageType) {
