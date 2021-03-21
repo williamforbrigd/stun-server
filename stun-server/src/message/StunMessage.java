@@ -25,7 +25,7 @@ public class StunMessage {
     private int transactionID;
     private MessageTypeClass messageTypeClass;
 
-    public static final int BUFFER_LENGTH = 160;
+    public static final int BUFFER_LENGTH = 548;
     private byte[] buffer;
 
 

@@ -28,15 +28,17 @@ public class PublicNAT {
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         socket.receive(packet);
         System.out.println(StunMessage.byteToString(packet.getData()));
+        System.out.println(packet.getAddress());
+        System.out.println(packet.getPort());
 
         buffer = "sender til Stun Serveren".getBytes(StandardCharsets.UTF_8);
-        int sendPort = 1252;
+        int sendPort = 1253;
         packet = new DatagramPacket(buffer, buffer.length, publicAddress, sendPort);
         socket.send(packet);
     }
 
     public static void main(String[] args) throws IOException {
-        PublicNAT publicNAT = new PublicNAT(160, 1251);
+        PublicNAT publicNAT = new PublicNAT(160, 1252);
         publicNAT.start();
     }
 }

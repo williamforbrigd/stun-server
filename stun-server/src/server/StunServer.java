@@ -1,14 +1,10 @@
 package server;
 
 import message.StunMessage;
-import stunattributes.XorMappedAddress;
 
-import java.awt.*;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
 
 
 public class StunServer {
@@ -16,35 +12,44 @@ public class StunServer {
     private DatagramSocket socket;
     private int bufferLength;
     private byte[] buffer;
-    private ICEServer iceServer;
+    private int port;
 
-    public StunServer(int bufferLength, String stunServer, int defaultPort) throws SocketException {
+    public StunServer(int bufferLength, int port) throws SocketException {
         this.bufferLength = bufferLength;
-        socket = new DatagramSocket();
-        iceServer = new ICEServer(stunServer, defaultPort);
+        this.port = port;
+        socket = new DatagramSocket(this.port);
     }
 
+    public StunServer() {}
+
     public void start() throws IOException {
-        socket.connect(InetAddress.getByName(this.iceServer.getStunServer()), this.iceServer.getDefaultPort());
-        //Receiving a STUN message
-        buffer = new byte[this.bufferLength];
+        byte[] buffer = new byte[this.bufferLength];
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         socket.receive(packet);
-        StunMessage msg = StunMessage.checkMessage(packet.getData());
-        System.out.println(StunMessage.byteToString(packet.getData()));
+        System.out.println(StunMessage.byteToString(buffer));
+        System.out.println(packet.getAddress());
+        System.out.println(packet.getPort());
+    }
 
-        if(msg.getMessageTypeClass() == StunMessage.MessageTypeClass.BINDING_REQUEST) {
-            XorMappedAddress xorMappedAddress = new XorMappedAddress();
+    public void runTestServer() throws IOException {
+        //this.socket = new DatagramSocket(new InetSocketAddress());
+        socket.connect(InetAddress.getByName("jstun.javawi.de"), 3478);
+        socket.setReuseAddress(true);
 
-        }
+        byte[] buffer = "testing to send packet".getBytes(StandardCharsets.UTF_8);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+        socket.send(packet);
+
+        packet = new DatagramPacket(new byte[200], 200);
+        socket.receive(packet);
+        System.out.println(new String(packet.getData(), 0, packet.getLength()));
+
     }
 
     public static void main(String[] args) throws IOException {
-        //The default port for TCP and UDP are 3478
-        StunServer server = new StunServer(StunMessage.BUFFER_LENGTH, "jstun.javawi.de", 3478);
-        //StunServer server = new StunServer(StunMessage.BUFFER_LENGTH,"stun1.l.google.com", 3478);
-        server.start();
-
+        //StunServer server = new StunServer(StunMessage.BUFFER_LENGTH, 1253);
+        //server.start();
+        StunServer server = new StunServer();
+        server.runTestServer();
     }
-
 }
