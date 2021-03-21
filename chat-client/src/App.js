@@ -1,142 +1,85 @@
-import React, { useRef, useState } from 'react';
-import './App.css';
-
-import firebase from 'firebase/app';
-import 'firebase/firestore'; //for the database
-import 'firebase/auth'; //for user authentication
-
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { useCollectionData } from 'react-firebase-hooks/firestore';
-
-firebase.initializeApp({
-    apiKey: "AIzaSyAY0WZlHrFO6y9WegXv5aqxpr_o6IAq56Q",
-    authDomain: "chat-application-b6985.firebaseapp.com",
-    projectId: "chat-application-b6985",
-    storageBucket: "chat-application-b6985.appspot.com",
-    messagingSenderId: "828596145432",
-    appId: "1:828596145432:web:0dc8b72b86e0e60de2a26d",
-    measurementId: "G-0XV0H5BP51" 
-})
-
-const auth = firebase.auth();
-const firestore = firebase.firestore();
 
 function App() {
-  const [user] = useAuthState(auth);
   return (
-    <div className="App">
-      <header>
-        <h1>⚛️🔥💬</h1>
-        <SignOut/>
-      </header>
-      <section>
-        {user ? < ChatRoom/> : <SignIn />}
-      </section>
+    <div>
+      <Chat1 />
+      <Chat2 />
     </div>
   );
 }
 
-function SignIn() {
-  const signInWithGoogle = () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider);
-  } 
+function Chat1() {
+  const WebRTCConnection = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: 'stun:stun1.l.google.com:19302',
+      },
+    ],
+  });
+
+  const chatChannel = WebRTCConnection.createDataChannel('chat');
+  chatChannel.onmessage = (event) => console.log('onmessage:', event.data);
+  chatChannel.onopen = () => console.log('onopen');
+  chatChannel.onclose = () => console.log('onclose');
+
+  WebRTCConnection.onicecandidate = (event) => {
+    if (event.candidate)
+      console.log('localDescription:', JSON.stringify(WebRTCConnection.localDescription));
+  };
+
+  WebRTCConnection.createOffer().then((localDescription) => {
+    WebRTCConnection.setLocalDescription(localDescription);
+  });
+
+  //const remoteDescription = /* Add localDescription from client B here */;
+  //WebRTCConnection.setRemoteDescription(remoteDescription);
 
   return(
-    <>
-      <button onClick={signInWithGoogle}>
-        Sign in with Google
-      </button>
-    </>
-  );
-}
-
-function SignOut() {
-  return auth.currentUser && (
-    <button onClick={() => auth.signOut()}>Sign Out</button>
-  );
-}
-
-function ChatRoom() {
-  const dummy = useRef();
-  const messagesRef = firestore.collection('messages');
-  const query = messagesRef.orderBy('createdAt').limit(25);
-  
-  const [messages] = useCollectionData(query, {idField: 'id'});
-
-  const [formValue, setFormValue] = useState('');
-
-  const sendMessage = async(e) => {
-    e.preventDefault(); //prevent the form from refreshing the page
-    const { uid, photoURL } = auth.currentUser;
-    await messagesRef.add({
-      text: formValue,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      uid,
-      photoURL
-    });
-    setFormValue('');
-    dummy.current.scrollIntoView({ behaviour: 'smooth'});
-  }
-
- async function deleteCollection() {
-  const collectionRef = firebase.collection('messages');
-  const query = collectionRef.orderBy('createdAt').limit(25);
-
-  return new Promise((resolve, reject) => {
-    deleteQueryBatch(query, resolve).catch(reject);
-  });
-}
-
-async function deleteQueryBatch(query, resolve) {
-  const snapshot = await query.get();
-
-  const batchSize = snapshot.size;
-  if (batchSize === 0) {
-    // When there are no documents left, we are done
-    resolve();
-    return;
-  }
-
-  // Delete documents in a batch
-  const batch = firebase.batch();
-  snapshot.docs.forEach((doc) => {
-    batch.delete(doc.ref);
-  });
-  await batch.commit();
-
-  // Recurse on the next process tick, to avoid
-  // exploding the stack.
-  process.nextTick(() => {
-    deleteQueryBatch(query, resolve);
-  });
-}
-
-  return (
-    <>
-      <main>
-        {messages && 
-          messages.map(msg => <ChatMessage key={msg.id} message={msg}/>)}
-          <div ref={dummy}></div>
-      </main>
-      <form onSubmit={sendMessage}>
-        <input value={formValue} onChange={(e) => setFormValue(e.target.value)}/>
-        <button type="submit">Submit</button>
-        <button onClick={deleteCollection}></button>
-      </form>
-    </>
-  );
-}
-
-function ChatMessage(props) {
-  const { text, uid, photoURL } = props.message;
-  const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
-  return (
-    <div className={`message ${messageClass}`}>
-      <img src={photoURL} />
-      <p>{text}</p>
+    <div>
+      Hello from Client A
     </div>
   );
 }
+
+function Chat2() {
+  //const remoteDescription = /* Add a localDescription from client A here */;
+
+  const WebRTCConnection = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: 'stun:stun1.l.google.com:19302',
+      },
+    ],
+  });
+
+  let chatChannel;
+  WebRTCConnection.ondatachannel = (event) => {
+    if (event.channel.label == 'chat') {
+      chatChannel = event.channel;
+      chatChannel.onmessage = (event) => console.log('onmessage:', event.data);
+      chatChannel.onopen = () => console.log('onopen');
+      chatChannel.onclose = () => console.log('onclose');
+    }
+  };
+
+  WebRTCConnection.onicecandidate = (event) => {
+    if (event.candidate)
+      console.log('localDescription:', JSON.stringify(WebRTCConnection.localDescription));
+  };
+
+  //WebRTCConnection.setRemoteDescription(remoteDescription);
+
+  WebRTCConnection.createAnswer().then((localDescription) => {
+    WebRTCConnection.setLocalDescription(localDescription);
+  });
+
+  return (
+    <div>
+      Hello from Client B
+    </div>
+  );
+
+}
+
 
 export default App;

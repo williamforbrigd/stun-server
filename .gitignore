@@ -23,3 +23,4 @@ stun/out/production/stun/stunattributes/XorMappedAddress.class
 stun/out/production/stun/udptest/UDPClient.class
 stun/out/production/stun/udptest/UDPServer.class
 test_jstun/JSTUN/
+stun/.idea
