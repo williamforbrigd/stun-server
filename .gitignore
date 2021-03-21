@@ -24,3 +24,7 @@ stun/out/production/stun/udptest/UDPClient.class
 stun/out/production/stun/udptest/UDPServer.class
 test_jstun/JSTUN/
 stun/.idea
+
+stun-server/.idea/
+stun-server/out/
+stun-server/stun-server.iml
