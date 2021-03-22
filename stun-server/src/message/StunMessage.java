@@ -83,6 +83,18 @@ public class StunMessage {
         return str;
     }
 
+    public byte[] generateTransactionID() {
+        //the transaction id is 96 bits which is 12 bytes.
+        byte[] id = new byte[12];
+        //System.arraycopy();
+        for(int i=0; i < id.length; i++) {
+            id[i] = Utility.intToByte((int)(Math.random() * 256));
+            //byte[] b = Utility.intToByte((int)(Math.random() * 256));
+            //System.arraycopy(b, id, i, 1);
+        }
+        return id;
+    }
+
     //TODO: parse the bytes from a buffer and get the message type
     public static StunMessage checkMessage(byte[] buffer) {
         return new StunMessage(MessageTypeClass.BINDING_REQUEST);
