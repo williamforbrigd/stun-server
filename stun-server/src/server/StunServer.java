@@ -5,6 +5,7 @@ import message.StunMessage;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 
 
 public class StunServer {
@@ -31,25 +32,47 @@ public class StunServer {
         System.out.println(packet.getPort());
     }
 
-    public void runTestServer() throws IOException {
-        //this.socket = new DatagramSocket(new InetSocketAddress());
-        socket.connect(InetAddress.getByName("jstun.javawi.de"), 3478);
-        socket.setReuseAddress(true);
+    public void runTestServer() throws IOException, ClassNotFoundException {
+        Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+        while(ifaces.hasMoreElements()) {
+            NetworkInterface iface = ifaces.nextElement();
+            Enumeration<InetAddress> iaddresses = iface.getInetAddresses();
+            while(iaddresses.hasMoreElements()) {
+                InetAddress address = iaddresses.nextElement();
+                if (Class.forName("java.net.Inet4Address").isInstance(address)) {
+                    if ((!address.isLoopbackAddress()) && (!address.isLinkLocalAddress())) {
+                        System.out.println(address);
+                        DatagramSocket socket = new DatagramSocket(new InetSocketAddress(address, 0));
+                        socket.setReuseAddress(true);
+                        //socket.connect(InetAddress.getByName("jstun.javawi.de"), 3478);
+                        socket.connect(InetAddress.getByName("stun1.l.google.com"), 3478);
+                        //socket.setSoTimeout(300);
+                        System.out.println(socket.getInetAddress().getHostAddress());
+                        System.out.println(socket.getInetAddress().getHostName());
+                        System.out.println(socket.getPort());
 
-        byte[] buffer = "testing to send packet".getBytes(StandardCharsets.UTF_8);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-        socket.send(packet);
+                        byte[] buffer = "Hei hva skjer".getBytes(StandardCharsets.UTF_8);
+                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                        socket.send(packet);
 
-        packet = new DatagramPacket(new byte[200], 200);
-        socket.receive(packet);
-        System.out.println(new String(packet.getData(), 0, packet.getLength()));
-
+                        DatagramPacket receive = new DatagramPacket(new byte[300], 300);
+                        socket.receive(receive);
+                        System.out.println(new String(receive.getData(), 0, receive.getLength()));
+                    }
+                }
+            }
+        }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         //StunServer server = new StunServer(StunMessage.BUFFER_LENGTH, 1253);
         //server.start();
         StunServer server = new StunServer();
-        server.runTestServer();
+        DatagramSocket socket = new DatagramSocket(3478);
+        DatagramPacket packet = new DatagramPacket(new byte[200], 200);
+        socket.receive(packet);
+        System.out.println(new String(packet.getData(), 0, packet.getLength()));
+
+        //server.runTestServer();
     }
 }

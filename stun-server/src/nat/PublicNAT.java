@@ -32,7 +32,7 @@ public class PublicNAT {
         System.out.println(packet.getPort());
 
         buffer = "sender til Stun Serveren".getBytes(StandardCharsets.UTF_8);
-        int sendPort = 1253;
+        int sendPort = 3478;
         packet = new DatagramPacket(buffer, buffer.length, publicAddress, sendPort);
         socket.send(packet);
     }

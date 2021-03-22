@@ -26,6 +26,8 @@ public class XorMappedAddress extends StunAttribute {
 
     public byte[] bytesFromAddress() {
 
+        //TODO finish this
+        return new byte[200];
     }
 
     /**
@@ -38,13 +40,15 @@ public class XorMappedAddress extends StunAttribute {
         int addToBinary = Integer.parseInt(binary, 2);
         int res = addToBinary ^ magicCookie;
 
+        //TODO: change this
+        return new String();
     }
 
     public String convertStringToBinary(String str) {
         StringBuilder res = new StringBuilder();
         char[] chars = str.toCharArray();
         for(char c : chars) {
-            res.append(String.format("%8s", Integer.toBinaryString(c)).replaceAll(" ", 0));
+            res.append(String.format("%8s", Integer.toBinaryString(c)).replaceAll(" ", "0"));
         }
         return res.toString();
     }

@@ -33,7 +33,7 @@ public class MappedAddress extends StunAttribute {
         StringBuilder res = new StringBuilder();
         char[] chars = str.toCharArray();
         for(char c : chars) {
-            res.append(String.format("%8s", Integer.toBinaryString(c)).replaceAll(" ", 0));
+            res.append(String.format("%8s", Integer.toBinaryString(c)).replaceAll(" ", "0"));
         }
         return res.toString();
     }

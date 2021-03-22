@@ -28,3 +28,4 @@ stun/.idea
 stun-server/.idea/
 stun-server/out/
 stun-server/stun-server.iml
+.DS_STORE
