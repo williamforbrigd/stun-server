@@ -7,7 +7,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 
-
+//TODO bruke datagramsocket eller ServerSocket
 public class StunServer {
     private InetAddress address;
     private DatagramSocket socket;
@@ -27,6 +27,13 @@ public class StunServer {
         byte[] buffer = new byte[this.bufferLength];
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         socket.receive(packet);
+
+        byte[] data = packet.getData();
+        for(int i=3; i < 16; i++) {
+            System.out.println(data[i]);
+        }
+
+        System.out.println(packet.getData().length);
         System.out.println(StunMessage.byteToString(buffer));
         System.out.println(packet.getAddress());
         System.out.println(packet.getPort());
@@ -65,14 +72,7 @@ public class StunServer {
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        //StunServer server = new StunServer(StunMessage.BUFFER_LENGTH, 1253);
-        //server.start();
-        StunServer server = new StunServer();
-        DatagramSocket socket = new DatagramSocket(3478);
-        DatagramPacket packet = new DatagramPacket(new byte[200], 200);
-        socket.receive(packet);
-        System.out.println(new String(packet.getData(), 0, packet.getLength()));
-
-        //server.runTestServer();
+        StunServer server = new StunServer(StunMessage.BUFFER_LENGTH, 3478);
+        server.start();
     }
 }

@@ -28,24 +28,15 @@ public class StunMessage {
     private MessageTypeClass messageTypeClass;
 
     public static final int BUFFER_LENGTH = 548;
-    private byte[] buffer;
-
+    private byte[] header;
 
     public enum MessageTypeClass {BINDING_REQUEST, INDICATION, SUCCESS_RESPONSE, ERROR_RESPONSE};
 
-    public StunMessage(int messageType, int messageLength) {
-        this.messageType = messageType;
-        this.messageTypeClass = findMessageType(messageType);
-        this.messageLength = messageLength;
-    }
-
-    public StunMessage(byte[] buffer) {
-        this.buffer = buffer;
-    }
 
     public StunMessage(MessageTypeClass messageTypeClass) {
         this.messageTypeClass = messageTypeClass;
-        buffer = new byte[20];
+        header = new byte[20];
+        this.magicCookie = 0x2112A442;
     }
 
     public StunMessage() {}
@@ -54,8 +45,12 @@ public class StunMessage {
         return this.messageTypeClass;
     }
 
-    public byte[] getBuffer() {
-        return this.buffer;
+    public byte[] getHeader() {
+        return this.header;
+    }
+
+    public int getMagicCookie() {
+        return this.magicCookie;
     }
 
     public MessageTypeClass findMessageType(int messageType) {
@@ -86,13 +81,18 @@ public class StunMessage {
     public byte[] generateTransactionID() {
         //the transaction id is 96 bits which is 12 bytes.
         byte[] id = new byte[12];
-        //System.arraycopy();
         for(int i=0; i < id.length; i++) {
             id[i] = Utility.intToByte((int)(Math.random() * 256));
-            //byte[] b = Utility.intToByte((int)(Math.random() * 256));
-            //System.arraycopy(b, id, i, 1);
         }
         return id;
+    }
+
+    public int messageTypeToInt(MessageTypeClass messageTypeClass) {
+        int res = 0;
+        if(messageTypeClass == MessageTypeClass.BINDING_REQUEST) res = 0b01;
+        else if(messageTypeClass == MessageTypeClass.SUCCESS_RESPONSE) res = 0b10;
+        else if(messageTypeClass == MessageTypeClass.ERROR_RESPONSE) res = 0b11;
+        return res;
     }
 
     //TODO: parse the bytes from a buffer and get the message type
