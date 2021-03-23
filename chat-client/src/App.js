@@ -1,85 +1,45 @@
+import React, { useState } from 'react';
+
+import firebase from 'firebase/app';
+import 'firebase/firestore'; //for the database
+import 'firebase/auth'; //for user authentication
+
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { useCollectionData } from 'react-firebase-hooks/firestore';
+
+const auth = firebase.auth();
+const firestore = firestore.firestore();
+
+firebase.initializeApp({
+
+});
 
 function App() {
-  return (
-    <div>
-      <Chat1 />
-      <Chat2 />
-    </div>
-  );
-}
+  const [message, setMessage] = useState();
 
-function Chat1() {
-  const WebRTCConnection = new RTCPeerConnection({
-    iceServers: [
-      {
-        urls: 'stun:stun1.l.google.com:19302',
-      },
-    ],
-  });
-
-  const chatChannel = WebRTCConnection.createDataChannel('chat');
-  chatChannel.onmessage = (event) => console.log('onmessage:', event.data);
-  chatChannel.onopen = () => console.log('onopen');
-  chatChannel.onclose = () => console.log('onclose');
-
-  WebRTCConnection.onicecandidate = (event) => {
-    if (event.candidate)
-      console.log('localDescription:', JSON.stringify(WebRTCConnection.localDescription));
-  };
-
-  WebRTCConnection.createOffer().then((localDescription) => {
-    WebRTCConnection.setLocalDescription(localDescription);
-  });
-
-  //const remoteDescription = /* Add localDescription from client B here */;
-  //WebRTCConnection.setRemoteDescription(remoteDescription);
-
+  const postRequest = () => {
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "applicaton/json"},
+      body: JSON.stringify(message)
+    };
+    fetch("http://localhost:8080/client", requestOptions)
+      .then((response) => response.json())
+      .then((result) => {
+        setMessage(result.message)
+      });
+  }
   return(
     <div>
-      Hello from Client A
+      <header>Chat</header>
     </div>
   );
 }
 
-function Chat2() {
-  //const remoteDescription = /* Add a localDescription from client A here */;
-
-  const WebRTCConnection = new RTCPeerConnection({
-    iceServers: [
-      {
-        urls: 'stun:stun1.l.google.com:19302',
-      },
-    ],
-  });
-
-  let chatChannel;
-  WebRTCConnection.ondatachannel = (event) => {
-    if (event.channel.label == 'chat') {
-      chatChannel = event.channel;
-      chatChannel.onmessage = (event) => console.log('onmessage:', event.data);
-      chatChannel.onopen = () => console.log('onopen');
-      chatChannel.onclose = () => console.log('onclose');
-    }
-  };
-
-  WebRTCConnection.onicecandidate = (event) => {
-    if (event.candidate)
-      console.log('localDescription:', JSON.stringify(WebRTCConnection.localDescription));
-  };
-
-  //WebRTCConnection.setRemoteDescription(remoteDescription);
-
-  WebRTCConnection.createAnswer().then((localDescription) => {
-    WebRTCConnection.setLocalDescription(localDescription);
-  });
-
-  return (
-    <div>
-      Hello from Client B
-    </div>
-  );
-
+function Chat() {
+  const messagesRef = firestore.collection('messages');
+  const query = messagesRes.orderBy('createdAt').limit(25);
+  const [messages] = useCollectionData(query, {idField: 'id'})
 }
-
 
 export default App;
