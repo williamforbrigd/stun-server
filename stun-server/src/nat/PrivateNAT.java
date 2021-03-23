@@ -10,29 +10,35 @@ import message.StunMessage;
  * NAT that is connected to the private net.
  */
 public class PrivateNAT {
-    private int privatePort;
-    private InetAddress privateAddress;
+    private InetAddress privateNatAddress;
+    private int privateNatPort;
     private DatagramSocket socket;
+    private static int bufferLength = StunMessage.BUFFER_LENGTH;
 
-    public PrivateNAT(int privatePort) throws SocketException {
-        this.privatePort = privatePort;
-        this.socket = new DatagramSocket(privatePort);
+    public PrivateNAT(int privateNatPort) throws UnknownHostException {
+        this.privateNatPort = privateNatPort;
+        this.privateNatAddress = InetAddress.getLocalHost();
     }
 
     public void start() throws IOException {
-        byte[] buffer = new byte[160];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-        socket.receive(packet);
-        System.out.println(StunMessage.byteToString(packet.getData()));
-        this.privatePort = packet.getPort();
-        this.privateAddress = packet.getAddress();
-        System.out.println(privateAddress);
-        System.out.println(privatePort);
+        try {
+            socket = new DatagramSocket(1251);
+            DatagramPacket send, receive;
+            try {
+                byte[] buffer = new byte[bufferLength];
+                receive = new DatagramPacket(buffer, buffer.length);
+                socket.receive(receive);
+                System.out.println("Client msg: " + new String(receive.getData(), 0, receive.getLength()));
 
-        int sendPort = 1252;
-        buffer = "Sender til public nat".getBytes(StandardCharsets.UTF_8);
-        packet = new DatagramPacket(buffer, buffer.length, privateAddress, sendPort);
-        socket.send(packet);
+                buffer = "Sending to public nat".getBytes(StandardCharsets.UTF_8);
+                send = new DatagramPacket(buffer, buffer.length, privateNatAddress, 1252);
+                socket.send(send);
+            } catch(IOException e) {
+                System.out.println("Could not send/reveice packet: " + e.getMessage());
+            }
+        } catch(SocketException e) {
+            System.out.println("Could not create socket: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) throws IOException {

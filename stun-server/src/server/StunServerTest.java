@@ -38,7 +38,7 @@ public class StunServerTest {
 
         DatagramPacket receive = new DatagramPacket(new byte[200], 200);
         socket.receive(receive);
-        System.out.println(StunMessage.byteToString(receive.getData()));
+        System.out.println(new String(receive.getData(), 0, receive.getLength()));
     }
 
     public void runTestServer() throws IOException, ClassNotFoundException {

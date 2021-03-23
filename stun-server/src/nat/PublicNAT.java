@@ -10,35 +10,40 @@ import java.nio.charset.StandardCharsets;
  * NAT that is connceted to the public internet.
  */
 public class PublicNAT {
+    private InetAddress publicNatAddress;
+    private int publicNatPort;
     private DatagramSocket socket;
-    private InetAddress publicAddress;
-    private int publicPort;
-    private int bufferLength;
-    private int privatePort;
+    private static int bufferLength = StunMessage.BUFFER_LENGTH;
 
-    public PublicNAT(int bufferLength, int privatePort) throws SocketException, UnknownHostException {
-        this.privatePort = privatePort;
-        this.bufferLength = bufferLength;
-        this.socket = new DatagramSocket(privatePort);
-        this.publicAddress = InetAddress.getLocalHost();
+    public PublicNAT(int publicNatPort, String hostName) throws UnknownHostException {
+        this.publicNatPort = publicNatPort;
+        //this.publicNatAddress = InetAddress.getByName(hostName);
+        this.publicNatAddress = InetAddress.getLocalHost();
     }
 
     public void start() throws IOException {
-        byte[] buffer = new byte[this.bufferLength];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-        socket.receive(packet);
-        System.out.println(StunMessage.byteToString(packet.getData()));
-        System.out.println(packet.getAddress());
-        System.out.println(packet.getPort());
+        try {
+            socket = new DatagramSocket(1252);
+            DatagramPacket send, receive;
+            try {
+                byte[] buffer = new byte[bufferLength];
+                receive = new DatagramPacket(buffer, buffer.length);
+                socket.receive(receive);
+                System.out.println("From private nat: " + new String(receive.getData(), 0, receive.getLength()));
 
-        buffer = "sender til Stun Serveren".getBytes(StandardCharsets.UTF_8);
-        int sendPort = 9991;
-        packet = new DatagramPacket(buffer, buffer.length, publicAddress, sendPort);
-        socket.send(packet);
+                buffer = "sending to stun server".getBytes(StandardCharsets.UTF_8);
+                send = new DatagramPacket(buffer, buffer.length, publicNatAddress, 3478);
+                socket.send(send);
+            } catch(IOException e) {
+                System.out.println("Could not send/receive packet: " + e.getMessage());
+            }
+        } catch(SocketException e) {
+            System.out.println("Could not create socket: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) throws IOException {
-        PublicNAT publicNAT = new PublicNAT(160, 1252);
+        PublicNAT publicNAT = new PublicNAT(1252, "");
         publicNAT.start();
     }
 }

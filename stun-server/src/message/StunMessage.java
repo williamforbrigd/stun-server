@@ -1,7 +1,5 @@
 package message;
 
-import stunattributes.StunAttribute;
-
 /**
  * Class for message.StunMessage
  *
@@ -23,26 +21,40 @@ import stunattributes.StunAttribute;
 public class StunMessage {
     private int messageType;
     private int messageLength;
-    private int magicCookie;
+    private static final int MAGIC_COOKIE =  0x2112A442;
     private int transactionID;
-    private MessageTypeClass messageTypeClass;
+    private MessageClass messageClass;
 
     public static final int BUFFER_LENGTH = 548;
     private byte[] header;
 
-    public enum MessageTypeClass {BINDING_REQUEST, INDICATION, SUCCESS_RESPONSE, ERROR_RESPONSE};
+    public enum MessageClass {BINDING_REQUEST, SUCCESS_RESPONSE, ERROR_RESPONSE};
 
-
-    public StunMessage(MessageTypeClass messageTypeClass) {
-        this.messageTypeClass = messageTypeClass;
+    public StunMessage(MessageClass messageClass) {
+        this.messageClass = messageClass;
         header = new byte[20];
-        this.magicCookie = 0x2112A442;
-    }
-
-    public StunMessage() {}
-
-    public MessageTypeClass getMessageTypeClass() {
-        return this.messageTypeClass;
+        byte[] messageType = new byte[2];
+        if(messageClass == MessageClass.BINDING_REQUEST) {
+            //binding request has class=0b00 (request) and method=0b000000000001 (binding)
+            //it is encoded into the first 16 bits as 0x0001
+            messageType = Utility.intToTwoBytes(0x0001);
+            System.arraycopy(messageType, 0, header, 0,  2);
+            this.messageLength = 0; //the message length for binding request is 0.
+        } else if(messageClass == MessageClass.SUCCESS_RESPONSE) {
+            //Binding response has class=0b10  (sucess response) and method=0b000000000001
+            //it is encoded into the first 16 bits as 0x0101
+            messageType = Utility.intToTwoBytes(0x0101);
+            System.arraycopy(messageType, 0, header, 0, 2);
+        }
+        //the message length takes the 2 next bytes. Message length for request is 0.
+        byte[] msgLength = Utility.intToTwoBytes(messageLength);
+        System.arraycopy(msgLength, 0, header, 2, 2);
+        //The magic cookie takes the next 4 bytes.
+        byte[] cookieBytes = Utility.intToFourBytes(MAGIC_COOKIE);
+        System.arraycopy(cookieBytes, 0, header, 4, 4);
+        //The transaction id takes the next 12 bytes.
+        byte[] id = generateTransactionID();
+        System.arraycopy(id, 0, header, 7, 12);
     }
 
     public byte[] getHeader() {
@@ -50,32 +62,7 @@ public class StunMessage {
     }
 
     public int getMagicCookie() {
-        return this.magicCookie;
-    }
-
-    public MessageTypeClass findMessageType(int messageType) {
-        if((messageType & 0x0110) == 0x0000) return MessageTypeClass.BINDING_REQUEST;
-        else if((messageType & 0x0110) == 0x0010) return MessageTypeClass.INDICATION;
-        else if((messageType & 0x0110) == 0x0100) return MessageTypeClass.SUCCESS_RESPONSE;
-        else if((messageType & 0x0110) == 0x0110) return MessageTypeClass.ERROR_RESPONSE;
-        else return null;
-    }
-
-    /**
-     * Interval is from 0 to 2**96-1
-     */
-    public void setTransactionID(int transactionID) {
-        this.transactionID = transactionID;
-    }
-
-    public static String byteToString(byte[] buffer) {
-        String str = "";
-        int i=0;
-        while(buffer[i] != 0) {
-            str += (char)buffer[i];
-            i++;
-        }
-        return str;
+        return this.MAGIC_COOKIE;
     }
 
     public byte[] generateTransactionID() {
@@ -87,29 +74,18 @@ public class StunMessage {
         return id;
     }
 
-    public int messageTypeToInt(MessageTypeClass messageTypeClass) {
+    public MessageClass findMessageClass(int messageType) {
+        if((messageType & 0x0110) == 0x0000) return MessageClass.BINDING_REQUEST;
+        else if((messageType & 0x0110) == 0x0100) return MessageClass.SUCCESS_RESPONSE;
+        else if((messageType & 0x0110) == 0x0110) return MessageClass.ERROR_RESPONSE;
+        else return null;
+    }
+
+    public int messageTypeToInt(MessageClass messageClass) {
         int res = 0;
-        if(messageTypeClass == MessageTypeClass.BINDING_REQUEST) res = 0b01;
-        else if(messageTypeClass == MessageTypeClass.SUCCESS_RESPONSE) res = 0b10;
-        else if(messageTypeClass == MessageTypeClass.ERROR_RESPONSE) res = 0b11;
+        if(messageClass == MessageClass.BINDING_REQUEST) res = 0b00;
+        else if(messageClass == MessageClass.SUCCESS_RESPONSE) res = 0b10;
+        else if(messageClass == MessageClass.ERROR_RESPONSE) res = 0b11;
         return res;
-    }
-
-    //TODO: parse the bytes from a buffer and get the message type
-    public static StunMessage checkMessage(byte[] buffer) {
-        return new StunMessage(MessageTypeClass.BINDING_REQUEST);
-    }
-
-    public static void main(String[] args) {
-        System.out.println(2 >> 1);
-        System.out.println(2 >> 2);
-        System.out.println(2 >> 3);
-        System.out.println(2 << 1);
-        System.out.println(2 << 2);
-        System.out.println(2 << 3);
-        int num = Integer.parseInt("1011", 2);
-        System.out.println(num >> 1);
-        System.out.println(num);
-        System.out.println(Integer.parseInt("1011", 2));
     }
 }
