@@ -24,17 +24,17 @@ public class XorMappedAddress extends StunAttribute {
     private byte[] buffer;
     private int bufferLength;
 
+    public static final int IPv4_FAMILY = 0x01;
+    public static final int IPv6_FAMILY = 0x02;
+
     public XorMappedAddress(int family, int mappedPort, InetAddress mappedAddress, long transactionID) {
         super();
         this.family = family;
-        this.xPort = xPort;
-        this.xAddress = xAddress;
-
-        if(family == 0x01) {
+        if(family == IPv4_FAMILY) {
             //The address is IPv4 and is 32 bits.
             //32 bits + 32 bits for address = 64 bits which is 8 bytes
             bufferLength = 8;
-        } else if(family == 0x02) {
+        } else if(family == IPv6_FAMILY) {
             //The address is IPv6 and is 128 bits.
             //32 bits + 128 bits for address = 160 bits which is 20 bytes
             bufferLength = 20;
@@ -85,49 +85,30 @@ public class XorMappedAddress extends StunAttribute {
      */
     private byte[] computeXAddressBytes(InetAddress mappedAddress, long transactionID) {
         byte[] bytes = mappedAddress.getAddress();
-        if(this.family == 0x01 && bytes != null) {
+        long mapped = 0, addressValue = 0;
+        if(this.family == IPv4_FAMILY && bytes != null) {
             //IPv4 address is 4 bytes and magic cookie is 4 bytes
-            int mapped = (int)Utility.fourBytesToLong(bytes);
-            int addressValue = mapped ^ StunMessage.MAGIC_COOKIE;
+            mapped = Utility.fourBytesToLong(bytes);
+            addressValue = mapped ^ StunMessage.MAGIC_COOKIE;
 
-            byte[] bytes1 = Utility.intToFourBytes(addressValue);
+            //TODO remove this that was used for debugging.
+            byte[] bytes1 = Utility.longToFourBytes(addressValue);
             try {
                 System.out.println(InetAddress.getByAddress(bytes1));
             } catch(UnknownHostException e) {
                 e.printStackTrace();
             }
+            return bytes1;
             //return ByteBuffer.allocate(4).putLong(addressValue).array();
-        } else if(this.family == 0x02 && bytes != null) {
+        } else if(this.family == IPv6_FAMILY && bytes != null) {
             //IPv6 address is 16 bytes
             //Magic cookie is 4 bytes. Transaction id is 12 bytes. cookie + id = 16 bytes
-            long mapped = ByteBuffer.wrap(bytes).getInt();
-            long addressValue = mapped ^ (StunMessage.MAGIC_COOKIE + transactionID);
+            mapped = ByteBuffer.wrap(bytes).getInt();
+            addressValue = mapped ^ (StunMessage.MAGIC_COOKIE + transactionID);
 
             //TODO: this gives BufferOverflow
             return ByteBuffer.allocate(16).putLong(addressValue).array();
         }
         return null;
-    }
-    /**
-     * The XOR-MAPPED-ADDRESS encodes the transport address by xor'ing it with the magic cookie.
-     * @param magicCookie
-     * @return
-     */
-    public String encodeAddressToBinary(int magicCookie) {
-        String binary = convertStringToBinary(xAddress);
-        int addToBinary = Integer.parseInt(binary, 2);
-        int res = addToBinary ^ magicCookie;
-
-        //TODO: change this
-        return new String();
-    }
-
-    public String convertStringToBinary(String str) {
-        StringBuilder res = new StringBuilder();
-        char[] chars = str.toCharArray();
-        for(char c : chars) {
-            res.append(String.format("%8s", Integer.toBinaryString(c)).replaceAll(" ", "0"));
-        }
-        return res.toString();
     }
 }

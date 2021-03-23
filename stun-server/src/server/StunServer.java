@@ -45,23 +45,25 @@ public class StunServer {
                 StunMessage message = StunMessage.parseHeader(buffer);
                 if(message.getMessageClass() == StunMessage.MessageClass.BINDING_REQUEST) {
                     XorMappedAddress xorAddress = new XorMappedAddress();
-                    int ipv4Family = 0x01, ipv6Family = 0x02;
+                    int messageLength = 0;
                     if(reflexiveAddress instanceof Inet4Address) {
-                        xorAddress = new XorMappedAddress(ipv4Family,reflexivePort, reflexiveAddress, message.getTransactionID());
+                        xorAddress = new XorMappedAddress(XorMappedAddress.IPv4_FAMILY,reflexivePort, reflexiveAddress, message.getTransactionID());
+                        messageLength = (int)Utility.fourBytesToLong(xorAddress.getBuffer());
                     } else if(reflexiveAddress instanceof Inet6Address) {
-                        xorAddress = new XorMappedAddress(ipv6Family, reflexivePort, reflexiveAddress, message.getTransactionID());
+                        xorAddress = new XorMappedAddress(XorMappedAddress.IPv6_FAMILY, reflexivePort, reflexiveAddress, message.getTransactionID());
+                        messageLength = ByteBuffer.wrap(xorAddress.getBuffer()).getInt();
                     }
-                    int messageLength = ByteBuffer.wrap(xorAddress.getBuffer()).getInt();
                     System.out.println("Message length: " + messageLength);
                     StunMessage response = new StunMessage(StunMessage.MessageClass.SUCCESS_RESPONSE, messageLength);
                     byte[] header = response.createHeader();
-                    System.arraycopy(header, 0, response.getBuffer(), 0, header.length);
-                    System.arraycopy(xorAddress.getBuffer(), 0, response.getBuffer(), header.length+1, xorAddress.getBuffer().length);
+                    buffer = response.getBuffer();
+                    byte[] xorBuffer = xorAddress.getBuffer();
+                    System.arraycopy(header, 0, buffer, 0, header.length);
+                    System.arraycopy(xorBuffer, 0, buffer, header.length, xorBuffer.length);
 
                     send = new DatagramPacket(buffer, buffer.length, reflexiveAddress, reflexivePort);
                     socket.send(send);
                 }
-
             } catch (IOException e) {
                 System.out.println("Could not send/receive packet: " + e.getMessage());
             }

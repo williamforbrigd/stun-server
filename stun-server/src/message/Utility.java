@@ -22,6 +22,15 @@ public class Utility {
         return res;
     }
 
+    public static byte[] longToFourBytes(long value) {
+        byte[] res = new byte[4];
+        res[0] = (byte)((value >>> 24) & 0xFF);
+        res[1] = (byte)((value >>> 16) & 0xFF);
+        res[2] = (byte)((value >>> 8) & 0xFF);
+        res[3] = (byte)(value & 0xFF);
+        return res;
+    }
+
     public static int byteToInt(byte value) {
         return (int)value & 0xff;
     }

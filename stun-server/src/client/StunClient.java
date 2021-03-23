@@ -67,6 +67,13 @@ public class StunClient {
                 receive = new DatagramPacket(buffer, buffer.length);
                 socket.receive(receive);
                 System.out.println(new String(receive.getData(), 0, receive.getLength()));
+                header = new byte[20];
+                System.arraycopy(buffer, 0, header, 0, 20);
+                StunMessage message = StunMessage.parseHeader(header);
+                if(message.getMessageClass() == StunMessage.MessageClass.SUCCESS_RESPONSE) {
+                    //TODO: parse the message
+                    StunMessage.parseStunMessage(buffer);
+                }
 
 
             } catch(IOException e) {

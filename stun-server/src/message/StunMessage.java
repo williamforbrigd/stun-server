@@ -1,5 +1,10 @@
 package message;
 
+import stunattributes.XorMappedAddress;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 /**
  * Class for message.StunMessage
  *
@@ -161,12 +166,29 @@ public class StunMessage {
 
         byte[] transactIdArr = new byte[12];
         System.arraycopy(header, 8, transactIdArr, 0, 12);
-        int transactionId = 1;
+        long transactionId = 1;
         for(byte b : transactIdArr) {
             transactionId *= Utility.byteToInt(b);
         }
         System.out.println("The transaction id is: " + transactionId);
 
         return new StunMessage(messageClass, msgLength, transactionId);
+    }
+
+    public static void parseStunMessage(byte[] buffer) {
+        //The 20 first bytes are the header.
+        //The next bytes are the message
+        int family = Utility.byteToInt(buffer[21]);
+        int xPort = Utility.twoBytesToInt(new byte[]{buffer[22], buffer[23]});
+        System.out.println("The xport is: " + xPort);
+        if(family == XorMappedAddress.IPv4_FAMILY) {
+            byte[] xAddressBytes = new byte[4];
+            System.arraycopy(buffer, 24, xAddressBytes, 0, 4);
+            try {
+                System.out.println("The address is: " + InetAddress.getByAddress(xAddressBytes));
+            } catch(UnknownHostException e) {
+                System.out.println("Could not get the inetaddress by the given bytes: " + e.getMessage());
+            }
+        }
     }
 }
