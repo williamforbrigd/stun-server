@@ -24,7 +24,7 @@ public class StunMessage {
     //The message length must contain the size in bytes of the message, not including the 20-byte STUN header.
     //All stun attributes are padded to a multiple of 4 bytes, the last 2 bits of this field is always zero.
     private int messageLength;
-    private static final int MAGIC_COOKIE =  0x2112A442;
+    public static final int MAGIC_COOKIE =  0x2112A442;
     private long transactionID;
     private MessageClass messageClass;
 
