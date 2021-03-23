@@ -24,7 +24,7 @@ public class XorMappedAddress extends StunAttribute {
     private byte[] buffer;
     private int bufferLength;
 
-    public XorMappedAddress(int family, int mappedPort, String mappedAddress, int transactionID) {
+    public XorMappedAddress(int family, int mappedPort, InetAddress mappedAddress, long transactionID) {
         super();
         this.family = family;
         this.xPort = xPort;
@@ -49,6 +49,8 @@ public class XorMappedAddress extends StunAttribute {
         System.arraycopy(xAddressBytes, 0, buffer, 4, xAddressBytes.length); //length is 4 for IPv4 and 16 for IPv6
     }
 
+    public XorMappedAddress() {}
+
     public byte[] getBuffer() {
         return this.buffer;
     }
@@ -63,9 +65,13 @@ public class XorMappedAddress extends StunAttribute {
         //Most significant bits of the magic cookie are the two first bytes.
         int mostSign = Utility.twoBytesToInt(new byte[]{magicCookieBytes[0], magicCookieBytes[1]});
         this.xPort = mappedPort ^ mostSign;
+        System.out.println("\nthe xport is : " + xPort);
         //Then convert to network byte order.
+        return Utility.intToTwoBytes(xPort);
+
         //Network byte order uses always big endian.
-        return ByteBuffer.allocate(2).putInt(xPort).order(ByteOrder.BIG_ENDIAN).array();
+        //return ByteBuffer.allocate(2).putLong(xpport).order(ByteOrder.BIG_ENDIAN).array();
+        //return ByteBuffer.allocate(2).putInt(xPort).order(ByteOrder.BIG_ENDIAN).array();
     }
 
     /**
@@ -77,27 +83,27 @@ public class XorMappedAddress extends StunAttribute {
      *    cookie and the 96-bit transaction ID, and converting the result to
      *    network byte order.
      */
-    private byte[] computeXAddressBytes(String mappedAddress, int transactionID) {
-        byte[] bytes = null;
-        try {
-            InetAddress ip = InetAddress.getByName(mappedAddress);
-            bytes = ip.getAddress(); //assuming the bytes are received in host byte order.
-        } catch(UnknownHostException e) {
-            System.out.println("could not get ip from name: " + e.getMessage());
-        }
-        long addressValue = 0, mapped = 0;
+    private byte[] computeXAddressBytes(InetAddress mappedAddress, long transactionID) {
+        byte[] bytes = mappedAddress.getAddress();
         if(this.family == 0x01 && bytes != null) {
             //IPv4 address is 4 bytes and magic cookie is 4 bytes
-            mapped = Utility.fourBytesToLong(bytes);
-            addressValue = mapped ^ StunMessage.MAGIC_COOKIE;
+            int mapped = (int)Utility.fourBytesToLong(bytes);
+            int addressValue = mapped ^ StunMessage.MAGIC_COOKIE;
 
-            return ByteBuffer.allocate(4).putLong(addressValue).array();
+            byte[] bytes1 = Utility.intToFourBytes(addressValue);
+            try {
+                System.out.println(InetAddress.getByAddress(bytes1));
+            } catch(UnknownHostException e) {
+                e.printStackTrace();
+            }
+            //return ByteBuffer.allocate(4).putLong(addressValue).array();
         } else if(this.family == 0x02 && bytes != null) {
             //IPv6 address is 16 bytes
             //Magic cookie is 4 bytes. Transaction id is 12 bytes. cookie + id = 16 bytes
-            mapped = ByteBuffer.wrap(bytes).getInt();
-            addressValue = mapped ^ (StunMessage.MAGIC_COOKIE + transactionID);
+            long mapped = ByteBuffer.wrap(bytes).getInt();
+            long addressValue = mapped ^ (StunMessage.MAGIC_COOKIE + transactionID);
 
+            //TODO: this gives BufferOverflow
             return ByteBuffer.allocate(16).putLong(addressValue).array();
         }
         return null;

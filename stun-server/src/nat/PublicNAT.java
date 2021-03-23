@@ -30,8 +30,16 @@ public class PublicNAT {
                 receive = new DatagramPacket(buffer, buffer.length);
                 socket.receive(receive);
                 System.out.println("Received from private nat with address: " + receive.getAddress() + " and port: " + receive.getPort());
+                InetAddress privateNatAddress = receive.getAddress();
+                int privateNatPort = receive.getPort();
 
                 send = new DatagramPacket(buffer, buffer.length, publicNatAddress, 3478);
+                socket.send(send);
+
+                receive = new DatagramPacket(buffer, buffer.length);
+                socket.receive(receive);
+
+                send = new DatagramPacket(buffer, buffer.length, privateNatAddress, privateNatPort);
                 socket.send(send);
             } catch(IOException e) {
                 System.out.println("Could not send/receive packet: " + e.getMessage());

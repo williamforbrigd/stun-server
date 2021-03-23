@@ -30,6 +30,7 @@ public class StunMessage {
 
     //The total length of a stun message can be 576 bytes minus 20-byte IP header and minus 8-byte UDP header
     public static final int BUFFER_LENGTH = 576;
+    private byte[] buffer;
     private byte[] header;
 
     public enum MessageClass {BINDING_REQUEST, SUCCESS_RESPONSE, ERROR_RESPONSE};
@@ -37,6 +38,7 @@ public class StunMessage {
     public StunMessage(MessageClass messageClass, int messageLength) {
         this.messageClass = messageClass;
         this.messageLength = messageLength;
+        this.buffer = new byte[BUFFER_LENGTH];
     }
 
     public StunMessage(MessageClass messageClass, int messageLength, long transactionID) {
@@ -51,6 +53,18 @@ public class StunMessage {
 
     public MessageClass getMessageClass() {
         return this.messageClass;
+    }
+
+    public long getTransactionID() {
+        return this.transactionID;
+    }
+
+    public byte[] getBuffer() {
+        return this.buffer;
+    }
+
+    public void setBuffer(byte[] buffer) {
+        this.buffer = buffer;
     }
 
     public byte[] createHeader() {

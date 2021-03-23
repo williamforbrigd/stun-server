@@ -1,9 +1,12 @@
 package server;
 
 import message.StunMessage;
+import message.Utility;
+import stunattributes.XorMappedAddress;
 
 import java.io.IOException;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 
@@ -39,10 +42,24 @@ public class StunServer {
                 System.out.println("Reflexive transport address: " + reflexiveAddress);
                 System.out.println("Reflexive port: " + reflexivePort);
 
-                //TODO form a Binding response
                 StunMessage message = StunMessage.parseHeader(buffer);
                 if(message.getMessageClass() == StunMessage.MessageClass.BINDING_REQUEST) {
-                    StunMessage response = new StunMessage(StunMessage.MessageClass.SUCCESS_RESPONSE, 0);
+                    XorMappedAddress xorAddress = new XorMappedAddress();
+                    int ipv4Family = 0x01, ipv6Family = 0x02;
+                    if(reflexiveAddress instanceof Inet4Address) {
+                        xorAddress = new XorMappedAddress(ipv4Family,reflexivePort, reflexiveAddress, message.getTransactionID());
+                    } else if(reflexiveAddress instanceof Inet6Address) {
+                        xorAddress = new XorMappedAddress(ipv6Family, reflexivePort, reflexiveAddress, message.getTransactionID());
+                    }
+                    int messageLength = ByteBuffer.wrap(xorAddress.getBuffer()).getInt();
+                    System.out.println("Message length: " + messageLength);
+                    StunMessage response = new StunMessage(StunMessage.MessageClass.SUCCESS_RESPONSE, messageLength);
+                    byte[] header = response.createHeader();
+                    System.arraycopy(header, 0, response.getBuffer(), 0, header.length);
+                    System.arraycopy(xorAddress.getBuffer(), 0, response.getBuffer(), header.length+1, xorAddress.getBuffer().length);
+
+                    send = new DatagramPacket(buffer, buffer.length, reflexiveAddress, reflexivePort);
+                    socket.send(send);
                 }
 
             } catch (IOException e) {

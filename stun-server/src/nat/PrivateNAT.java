@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 
 import message.StunMessage;
 
+import javax.xml.crypto.Data;
+
 /**
  * NAT that is connected to the private net.
  */
@@ -29,8 +31,16 @@ public class PrivateNAT {
                 receive = new DatagramPacket(buffer, buffer.length);
                 socket.receive(receive);
                 System.out.println("Received from client with adress: " + receive.getAddress() + " and port: " + receive.getPort());
+                InetAddress privateClientAddress = receive.getAddress();
+                int privateClientPort = receive.getPort();
 
                 send = new DatagramPacket(buffer, buffer.length, privateNatAddress, 1252);
+                socket.send(send);
+
+                receive = new DatagramPacket(buffer, buffer.length);
+                socket.receive(receive);
+
+                send = new DatagramPacket(buffer, buffer.length, privateClientAddress, privateClientPort);
                 socket.send(send);
             } catch(IOException e) {
                 System.out.println("Could not send/reveice packet: " + e.getMessage());

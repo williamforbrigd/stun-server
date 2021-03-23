@@ -17,7 +17,7 @@ public class StunClient {
     private int publicPort;
     private InetAddress publicAddress;
 
-    private DatagramSocket clientSocket;
+    private DatagramSocket socket;
 
     private String localDescription;
     private String remoteDescription;
@@ -55,13 +55,20 @@ public class StunClient {
 
     public void start() {
         try {
-            clientSocket = new DatagramSocket(this.privateClientPort);
+            socket = new DatagramSocket(this.privateClientPort);
             DatagramPacket receive, send;
             try {
                 StunMessage bindingRequest = new StunMessage(StunMessage.MessageClass.BINDING_REQUEST, 0);
                 byte[] header = bindingRequest.createHeader();
                 send = new DatagramPacket(header, header.length, privateClientAddress, 1251);
-                clientSocket.send(send);
+                socket.send(send);
+
+                byte[] buffer = new byte[StunMessage.BUFFER_LENGTH];
+                receive = new DatagramPacket(buffer, buffer.length);
+                socket.receive(receive);
+                System.out.println(new String(receive.getData(), 0, receive.getLength()));
+
+
             } catch(IOException e) {
                 System.out.println("Could not send/receive packet: " + e.getMessage());
             }
