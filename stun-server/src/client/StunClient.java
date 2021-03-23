@@ -1,6 +1,7 @@
 package client;
 
 import message.StunMessage;
+import message.Utility;
 
 import java.io.IOException;
 import java.net.*;
@@ -60,9 +61,18 @@ public class StunClient {
 
         //Send binding request
         StunMessage bindingRequest = new StunMessage(StunMessage.MessageTypeClass.BINDING_REQUEST);
+        int typeInt = bindingRequest.messageTypeToInt(bindingRequest.getMessageTypeClass());
+        byte typeByte = Utility.intToByte(typeInt);
+        System.out.println("the type is: " + typeByte);
+        bindingRequest.getHeader()[3] = typeByte;
+        int cookie = bindingRequest.getMagicCookie();
+        byte cookieType = Utility.intToByte(cookie);
+        bindingRequest.getHeader()[4] = cookieType;
+        byte[] id = bindingRequest.generateTransactionID();
+        System.arraycopy(id, 0, bindingRequest.getHeader(), 0, id.length);
 
-        byte[] buffer = "hei hva skjer".getBytes(StandardCharsets.UTF_8);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, privateAddress, 1251);
+        byte[] buffer = bindingRequest.getHeader();
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, privateAddress, 3478);
         socket.send(packet);
     }
 
@@ -72,9 +82,9 @@ public class StunClient {
 
 
     public static void main(String[] args) throws IOException {
-        System.out.println((int)(Math.random() * 65536));
+        System.out.println(Utility.intToByte(0x2112A442));
+        System.out.println(Utility.intToByte(0b01));
         StunClient client = new StunClient(1250);
         client.start();
     }
-
 }
