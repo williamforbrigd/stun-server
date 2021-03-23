@@ -41,6 +41,38 @@ public class StunServerTest {
         System.out.println(StunMessage.byteToString(receive.getData()));
     }
 
+    public void runTestServer() throws IOException, ClassNotFoundException {
+        Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+        while(ifaces.hasMoreElements()) {
+            NetworkInterface iface = ifaces.nextElement();
+            Enumeration<InetAddress> iaddresses = iface.getInetAddresses();
+            while(iaddresses.hasMoreElements()) {
+                InetAddress address = iaddresses.nextElement();
+                if (Class.forName("java.net.Inet4Address").isInstance(address)) {
+                    if ((!address.isLoopbackAddress()) && (!address.isLinkLocalAddress())) {
+                        System.out.println(address);
+                        DatagramSocket socket = new DatagramSocket(new InetSocketAddress(address, 0));
+                        socket.setReuseAddress(true);
+                        //socket.connect(InetAddress.getByName("jstun.javawi.de"), 3478);
+                        socket.connect(InetAddress.getByName("stun1.l.google.com"), 3478);
+                        //socket.setSoTimeout(300);
+                        System.out.println(socket.getInetAddress().getHostAddress());
+                        System.out.println(socket.getInetAddress().getHostName());
+                        System.out.println(socket.getPort());
+
+                        byte[] buffer = "Hei hva skjer".getBytes(StandardCharsets.UTF_8);
+                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                        socket.send(packet);
+
+                        DatagramPacket receive = new DatagramPacket(new byte[300], 300);
+                        socket.receive(receive);
+                        System.out.println(new String(receive.getData(), 0, receive.getLength()));
+                    }
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         StunServerTest test = new StunServerTest();
         test.run();
