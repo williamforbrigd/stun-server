@@ -20,22 +20,37 @@ package message;
 
 public class StunMessage {
     private int messageType;
+
+    //The message length must contain the size in bytes of the message, not including the 20-byte STUN header.
+    //All stun attributes are padded to a multiple of 4 bytes, the last 2 bits of this field is always zero.
     private int messageLength;
     private static final int MAGIC_COOKIE =  0x2112A442;
-    private int transactionID;
+    private long transactionID;
     private MessageClass messageClass;
 
-    public static final int BUFFER_LENGTH = 548;
+    //The total length of a stun message can be 576 bytes minus 20-byte IP header and minus 8-byte UDP header
+    public static final int BUFFER_LENGTH = 576;
     private byte[] header;
 
     public enum MessageClass {BINDING_REQUEST, SUCCESS_RESPONSE, ERROR_RESPONSE};
 
-    public StunMessage(MessageClass messageClass) {
+    public StunMessage(MessageClass messageClass, int messageLength) {
         this.messageClass = messageClass;
+        this.messageLength = messageLength;
+    }
+
+    public StunMessage(MessageClass messageClass, int messageLength, long transactionID) {
+        this.messageClass = messageClass;
+        this.messageLength = messageLength;
+        this.transactionID = transactionID;
     }
 
     public int getMagicCookie() {
         return this.MAGIC_COOKIE;
+    }
+
+    public MessageClass getMessageClass() {
+        return this.messageClass;
     }
 
     public byte[] createHeader() {
@@ -61,7 +76,7 @@ public class StunMessage {
         System.arraycopy(cookieBytes, 0, header, 4, 4);
         //The transaction id takes the next 12 bytes.
         byte[] id = generateTransactionID();
-        System.arraycopy(id, 0, header, 7, 12);
+        System.arraycopy(id, 0, header, 8, 12);
 
         return header;
     }
@@ -70,12 +85,13 @@ public class StunMessage {
         //the transaction id is 96 bits which is 12 bytes.
         byte[] id = new byte[12];
         for(int i=0; i < id.length; i++) {
+            int rand = (int)(Math.random() * 256);
             id[i] = Utility.intToByte((int)(Math.random() * 256));
         }
         return id;
     }
 
-    public MessageClass findMessageClass(int messageType) {
+    public static MessageClass findMessageClass(int messageType) {
         if((messageType & 0x0110) == 0x0000) return MessageClass.BINDING_REQUEST;
         else if((messageType & 0x0110) == 0x0100) return MessageClass.SUCCESS_RESPONSE;
         else if((messageType & 0x0110) == 0x0110) return MessageClass.ERROR_RESPONSE;
@@ -90,7 +106,53 @@ public class StunMessage {
         return res;
     }
 
+    private static boolean checkTwoFirstBits(byte b) {
+        String binary = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
+        if(binary.charAt(0) == '0' && binary.charAt(1) == '0')
+            return true;
+        else
+            return false;
+    }
+
+    //TODO modify this if the header does not obey one of the rules for Section 6.
     public static StunMessage parseHeader(byte[] header) {
-        
+        byte[] messageType = new byte[2];
+        System.arraycopy(header, 0, messageType, 0, 2);
+
+        //TODO: Check that the two first bits are 0.
+        if(!checkTwoFirstBits(messageType[0])) return null;
+
+        int msgType = Utility.twoBytesToInt(messageType);
+        MessageClass messageClass = findMessageClass(msgType);
+        int count = 0;
+        for(MessageClass c : MessageClass.values()) {
+            if(c == messageClass)
+                count++;
+        }
+        if(count == 0) return null; //Check that the messageclass matches one of the valid message classes.
+        System.out.println("\nResult of parsing the header: ");
+        System.out.println("The message class is: " + messageClass);
+
+        byte[] msgLengthArr = new byte[2];
+        System.arraycopy(header, 2, msgLengthArr, 0, 2);
+        int msgLength = Utility.twoBytesToInt(msgLengthArr);
+        System.out.println("The message length is: " + msgLength);
+
+        byte[] magicCookieArr = new byte[4];
+        System.arraycopy(header, 4, magicCookieArr, 0, 4);
+        long magicCookie = Utility.fourBytesToLong(magicCookieArr);
+        if(magicCookie == StunMessage.MAGIC_COOKIE) {
+            System.out.println("The magic cookie is correct");
+        }
+
+        byte[] transactIdArr = new byte[12];
+        System.arraycopy(header, 8, transactIdArr, 0, 12);
+        int transactionId = 1;
+        for(byte b : transactIdArr) {
+            transactionId *= Utility.byteToInt(b);
+        }
+        System.out.println("The transaction id is: " + transactionId);
+
+        return new StunMessage(messageClass, msgLength, transactionId);
     }
 }

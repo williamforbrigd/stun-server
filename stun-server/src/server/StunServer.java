@@ -24,11 +24,11 @@ public class StunServer {
     }
 
     public void start() {
-        System.out.println("Server address: " + socket.getInetAddress());
-        System.out.println("Server port: " + serverPort);
         try {
             socket = new DatagramSocket(this.serverPort);
             DatagramPacket receive, send;
+            System.out.println("Server address: " + socket.getInetAddress());
+            System.out.println("Server port: " + serverPort);
             try {
                 byte[] buffer = new byte[bufferLength];
                 receive = new DatagramPacket(buffer, buffer.length);
@@ -40,6 +40,10 @@ public class StunServer {
                 System.out.println("Reflexive port: " + reflexivePort);
 
                 //TODO form a Binding response
+                StunMessage message = StunMessage.parseHeader(buffer);
+                if(message.getMessageClass() == StunMessage.MessageClass.BINDING_REQUEST) {
+                    StunMessage response = new StunMessage(StunMessage.MessageClass.SUCCESS_RESPONSE, 0);
+                }
 
             } catch (IOException e) {
                 System.out.println("Could not send/receive packet: " + e.getMessage());

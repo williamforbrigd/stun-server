@@ -58,7 +58,7 @@ public class StunClient {
             clientSocket = new DatagramSocket(this.privateClientPort);
             DatagramPacket receive, send;
             try {
-                StunMessage bindingRequest = new StunMessage(StunMessage.MessageClass.BINDING_REQUEST);
+                StunMessage bindingRequest = new StunMessage(StunMessage.MessageClass.BINDING_REQUEST, 0);
                 byte[] header = bindingRequest.createHeader();
                 send = new DatagramPacket(header, header.length, privateClientAddress, 1251);
                 clientSocket.send(send);
