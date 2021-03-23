@@ -59,8 +59,8 @@ public class StunClient {
             DatagramPacket receive, send;
             try {
                 StunMessage bindingRequest = new StunMessage(StunMessage.MessageClass.BINDING_REQUEST);
-                byte[] buffer = bindingRequest.getHeader();
-                send = new DatagramPacket(buffer, buffer.length, privateClientAddress, 1251);
+                byte[] header = bindingRequest.createHeader();
+                send = new DatagramPacket(header, header.length, privateClientAddress, 1251);
                 clientSocket.send(send);
             } catch(IOException e) {
                 System.out.println("Could not send/receive packet: " + e.getMessage());

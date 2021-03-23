@@ -32,15 +32,22 @@ public class StunMessage {
 
     public StunMessage(MessageClass messageClass) {
         this.messageClass = messageClass;
+    }
+
+    public int getMagicCookie() {
+        return this.MAGIC_COOKIE;
+    }
+
+    public byte[] createHeader() {
         header = new byte[20];
-        byte[] messageType = new byte[2];
-        if(messageClass == MessageClass.BINDING_REQUEST) {
+        byte[] messageType;
+        if(this.messageClass == MessageClass.BINDING_REQUEST) {
             //binding request has class=0b00 (request) and method=0b000000000001 (binding)
             //it is encoded into the first 16 bits as 0x0001
             messageType = Utility.intToTwoBytes(0x0001);
             System.arraycopy(messageType, 0, header, 0,  2);
             this.messageLength = 0; //the message length for binding request is 0.
-        } else if(messageClass == MessageClass.SUCCESS_RESPONSE) {
+        } else if(this.messageClass == MessageClass.SUCCESS_RESPONSE) {
             //Binding response has class=0b10  (sucess response) and method=0b000000000001
             //it is encoded into the first 16 bits as 0x0101
             messageType = Utility.intToTwoBytes(0x0101);
@@ -55,14 +62,8 @@ public class StunMessage {
         //The transaction id takes the next 12 bytes.
         byte[] id = generateTransactionID();
         System.arraycopy(id, 0, header, 7, 12);
-    }
 
-    public byte[] getHeader() {
-        return this.header;
-    }
-
-    public int getMagicCookie() {
-        return this.MAGIC_COOKIE;
+        return header;
     }
 
     public byte[] generateTransactionID() {
@@ -87,5 +88,9 @@ public class StunMessage {
         else if(messageClass == MessageClass.SUCCESS_RESPONSE) res = 0b10;
         else if(messageClass == MessageClass.ERROR_RESPONSE) res = 0b11;
         return res;
+    }
+
+    public static StunMessage parseHeader(byte[] header) {
+        
     }
 }

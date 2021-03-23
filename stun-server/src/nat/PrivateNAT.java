@@ -20,7 +20,7 @@ public class PrivateNAT {
         this.privateNatAddress = InetAddress.getLocalHost();
     }
 
-    public void start() throws IOException {
+    public void start() {
         try {
             socket = new DatagramSocket(1251);
             DatagramPacket send, receive;
@@ -28,9 +28,8 @@ public class PrivateNAT {
                 byte[] buffer = new byte[bufferLength];
                 receive = new DatagramPacket(buffer, buffer.length);
                 socket.receive(receive);
-                System.out.println("Client msg: " + new String(receive.getData(), 0, receive.getLength()));
+                System.out.println("Received from client with adress: " + receive.getAddress() + " and port: " + receive.getPort());
 
-                buffer = "Sending to public nat".getBytes(StandardCharsets.UTF_8);
                 send = new DatagramPacket(buffer, buffer.length, privateNatAddress, 1252);
                 socket.send(send);
             } catch(IOException e) {

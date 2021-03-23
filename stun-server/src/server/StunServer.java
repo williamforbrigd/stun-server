@@ -24,19 +24,18 @@ public class StunServer {
     }
 
     public void start() {
+        System.out.println("Server address: " + socket.getInetAddress());
+        System.out.println("Server port: " + serverPort);
         try {
             socket = new DatagramSocket(this.serverPort);
             DatagramPacket receive, send;
             try {
-                byte[] buffer = new byte[this.bufferLength];
+                byte[] buffer = new byte[bufferLength];
                 receive = new DatagramPacket(buffer, buffer.length);
                 socket.receive(receive);
                 reflexiveAddress = receive.getAddress();
                 reflexivePort = receive.getPort();
 
-                System.out.println("Msg from client: " + new String(receive.getData(), 0, receive.getLength()));
-                System.out.println("Server address: " + socket.getInetAddress());
-                System.out.println("Server port: " + serverPort);
                 System.out.println("Reflexive transport address: " + reflexiveAddress);
                 System.out.println("Reflexive port: " + reflexivePort);
 

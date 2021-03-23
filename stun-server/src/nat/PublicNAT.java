@@ -29,9 +29,8 @@ public class PublicNAT {
                 byte[] buffer = new byte[bufferLength];
                 receive = new DatagramPacket(buffer, buffer.length);
                 socket.receive(receive);
-                System.out.println("From private nat: " + new String(receive.getData(), 0, receive.getLength()));
+                System.out.println("Received from private nat with address: " + receive.getAddress() + " and port: " + receive.getPort());
 
-                buffer = "sending to stun server".getBytes(StandardCharsets.UTF_8);
                 send = new DatagramPacket(buffer, buffer.length, publicNatAddress, 3478);
                 socket.send(send);
             } catch(IOException e) {
