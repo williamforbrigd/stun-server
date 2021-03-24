@@ -7,7 +7,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 
 /**
- * NAT that is connceted to the public internet.
+ * NAT that is connected to the public internet.
  */
 public class PublicNAT {
     private InetAddress publicNatAddress;
