@@ -1,5 +1,6 @@
 package stunattributes;
 
+import client.ReflexiveAddress;
 import message.StunMessage;
 import message.Utility;
 
@@ -20,7 +21,7 @@ import java.nio.ByteOrder;
 public class XorMappedAddress extends StunAttribute {
     private int family;
     private int xPort;
-    private String xAddress;
+    private InetAddress xAddress;
     private byte[] buffer;
     private int bufferLength;
 
@@ -49,6 +50,11 @@ public class XorMappedAddress extends StunAttribute {
         System.arraycopy(xAddressBytes, 0, buffer, 4, xAddressBytes.length); //length is 4 for IPv4 and 16 for IPv6
     }
 
+    public XorMappedAddress(InetAddress xAddress, int xPort) {
+        this.xAddress = xAddress;
+        this.xPort = xPort;
+    }
+
     public XorMappedAddress() {}
 
     public byte[] getBuffer() {
@@ -60,11 +66,11 @@ public class XorMappedAddress extends StunAttribute {
      * bit of the magic cookie, and then converting the result to network byte order.
      * I assume the mapped port is already in host byte order.
      */
-    private byte[] computeXPortBytes(int mappedPort) {
+    private byte[] computeXPortBytes(int reflexivePort) {
         byte[] magicCookieBytes = Utility.intToFourBytes(StunMessage.MAGIC_COOKIE);
         //Most significant bits of the magic cookie are the two first bytes.
         int mostSign = Utility.twoBytesToInt(new byte[]{magicCookieBytes[0], magicCookieBytes[1]});
-        this.xPort = mappedPort ^ mostSign;
+        this.xPort = reflexivePort ^ mostSign;
         System.out.println("\nthe xport is : " + xPort);
         //Then convert to network byte order.
         return Utility.intToTwoBytes(xPort);
@@ -72,6 +78,12 @@ public class XorMappedAddress extends StunAttribute {
         //Network byte order uses always big endian.
         //return ByteBuffer.allocate(2).putLong(xpport).order(ByteOrder.BIG_ENDIAN).array();
         //return ByteBuffer.allocate(2).putInt(xPort).order(ByteOrder.BIG_ENDIAN).array();
+    }
+
+    private static int computeReflexivePort(int xPort) {
+        byte[] magicCookieBytes = Utility.intToFourBytes(StunMessage.MAGIC_COOKIE);
+        int mostSign = Utility.twoBytesToInt(new byte[]{magicCookieBytes[0], magicCookieBytes[1]});
+        return (xPort ^ mostSign);
     }
 
     /**
@@ -83,16 +95,16 @@ public class XorMappedAddress extends StunAttribute {
      *    cookie and the 96-bit transaction ID, and converting the result to
      *    network byte order.
      */
-    private byte[] computeXAddressBytes(InetAddress mappedAddress, long transactionID) {
-        byte[] bytes = mappedAddress.getAddress();
-        long mapped = 0, addressValue = 0;
+    private byte[] computeXAddressBytes(InetAddress reflexiveAddress, long transactionID) {
+        byte[] bytes = reflexiveAddress.getAddress();
+        long mapped = 0, xAddressValue = 0;
         if(this.family == IPv4_FAMILY && bytes != null) {
             //IPv4 address is 4 bytes and magic cookie is 4 bytes
             mapped = Utility.fourBytesToLong(bytes);
-            addressValue = mapped ^ StunMessage.MAGIC_COOKIE;
+            xAddressValue = mapped ^ StunMessage.MAGIC_COOKIE;
 
             //TODO remove this that was used for debugging.
-            byte[] bytes1 = Utility.longToFourBytes(addressValue);
+            byte[] bytes1 = Utility.longToFourBytes(xAddressValue);
             try {
                 System.out.println(InetAddress.getByAddress(bytes1));
             } catch(UnknownHostException e) {
@@ -104,10 +116,57 @@ public class XorMappedAddress extends StunAttribute {
             //IPv6 address is 16 bytes
             //Magic cookie is 4 bytes. Transaction id is 12 bytes. cookie + id = 16 bytes
             mapped = ByteBuffer.wrap(bytes).getInt();
-            addressValue = mapped ^ (StunMessage.MAGIC_COOKIE + transactionID);
+            xAddressValue = mapped ^ (StunMessage.MAGIC_COOKIE + transactionID);
 
             //TODO: this gives BufferOverflow
-            return ByteBuffer.allocate(16).putLong(addressValue).array();
+            return ByteBuffer.allocate(16).putLong(xAddressValue).array();
+        }
+        return null;
+    }
+
+    private static InetAddress computeReflexiveAddress(long xAddressValue, int family, long transactionID)  {
+        long mappedAddressValue = 0;
+        if(family == XorMappedAddress.IPv4_FAMILY) {
+            mappedAddressValue = xAddressValue ^ StunMessage.MAGIC_COOKIE;
+            byte[] bytes = Utility.longToFourBytes(mappedAddressValue);
+            try {
+                return InetAddress.getByAddress(bytes);
+            } catch(UnknownHostException e) {
+                System.out.println("Could not get the IPv4 address: " + e.getMessage());
+            }
+        } else if(family == XorMappedAddress.IPv6_FAMILY) {
+            mappedAddressValue = xAddressValue ^ (StunMessage.MAGIC_COOKIE + transactionID);
+            byte[] bytes = ByteBuffer.allocate(16).putLong(mappedAddressValue).array();
+            try {
+                return InetAddress.getByAddress(bytes);
+            } catch(UnknownHostException e) {
+                System.out.println("Could not get the IPv6 address: " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    public static ReflexiveAddress parseXorMappedAttribute(byte[] buffer, long transactionID) {
+        //The 20 first bytes are the header.
+        //The next bytes are the message
+        ReflexiveAddress address = new ReflexiveAddress();
+        int family = Utility.byteToInt(buffer[21]);
+        int xPort = Utility.twoBytesToInt(new byte[]{buffer[22], buffer[23]});
+        int reflexivePort = computeReflexivePort(xPort);
+        System.out.println("The xport is: " + xPort);
+        System.out.println("The reflexive port is: " + reflexivePort);
+        if(family == XorMappedAddress.IPv4_FAMILY) {
+            byte[] xAddressBytes = new byte[4];
+            System.arraycopy(buffer, 24, xAddressBytes, 0, 4);
+            long xAddressValue = Utility.fourBytesToLong(xAddressBytes);
+            InetAddress reflexiveAddress = computeReflexiveAddress(xAddressValue, family, transactionID);
+            return new ReflexiveAddress(reflexiveAddress, reflexivePort);
+        } else if(family == XorMappedAddress.IPv6_FAMILY) {
+            byte[] xAddressBytes = new byte[16];
+            System.arraycopy(buffer, 24, xAddressBytes, 0, 16);
+            long xAddressValue = ByteBuffer.wrap(xAddressBytes).getLong();
+            InetAddress reflexiveAddress = XorMappedAddress.computeReflexiveAddress(xAddressValue, family, transactionID);
+            return new ReflexiveAddress(reflexiveAddress, reflexivePort);
         }
         return null;
     }

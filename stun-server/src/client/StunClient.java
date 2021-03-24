@@ -1,10 +1,10 @@
 package client;
 
 import message.StunMessage;
+import stunattributes.XorMappedAddress;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 
 /**
  * STUN client that is connected to the private network.
@@ -72,10 +72,11 @@ public class StunClient {
                 StunMessage message = StunMessage.parseHeader(header);
                 if(message.getMessageClass() == StunMessage.MessageClass.SUCCESS_RESPONSE) {
                     //TODO: parse the message
-                    StunMessage.parseStunMessage(buffer);
+                    ReflexiveAddress address = XorMappedAddress.parseXorMappedAttribute(buffer, message.getTransactionID());
+                    if(address == null) return;
+                    System.out.println("The public address is: " + address.getReflexiveAddress());
+                    System.out.println("The port is: " + address.getReflexivePort());
                 }
-
-
             } catch(IOException e) {
                 System.out.println("Could not send/receive packet: " + e.getMessage());
             }
