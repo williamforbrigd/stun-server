@@ -132,16 +132,17 @@ public class StunMessage {
         byte[] messageType = new byte[2];
         System.arraycopy(header, 0, messageType, 0, 2);
 
-        if(!checkTwoFirstBits(messageType[0])) return null;
+        MessageClass messageClass;
+        if(!checkTwoFirstBits(messageType[0])) messageClass = MessageClass.ERROR_RESPONSE;
 
         int msgType = Utility.twoBytesToInt(messageType);
-        MessageClass messageClass = findMessageClass(msgType);
+        messageClass = findMessageClass(msgType);
         int count = 0;
         for(MessageClass c : MessageClass.values()) {
             if(c == messageClass)
                 count++;
         }
-        if(count == 0) return null; //Check that the messageclass matches one of the valid message classes.
+        if(count == 0) messageClass = MessageClass.ERROR_RESPONSE; //Check that the messageclass matches one of the valid message classes.
         System.out.println("\nResult of parsing the header: ");
         System.out.println("The message class is: " + messageClass);
 
@@ -155,6 +156,8 @@ public class StunMessage {
         long magicCookie = Utility.fourBytesToLong(magicCookieArr);
         if(magicCookie == StunMessage.MAGIC_COOKIE) {
             System.out.println("The magic cookie is correct");
+        } else {
+            messageClass = MessageClass.ERROR_RESPONSE;
         }
 
         byte[] transactIdArr = new byte[12];
@@ -163,7 +166,6 @@ public class StunMessage {
         for(byte b : transactIdArr) {
             transactionId *= Utility.byteToInt(b);
         }
-        System.out.println("The transaction id is: " + transactionId);
 
         return new StunMessage(messageClass, msgLength, transactionId);
     }

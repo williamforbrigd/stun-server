@@ -71,14 +71,9 @@ public class XorMappedAddress {
         //Most significant bits of the magic cookie are the two first bytes.
         int mostSign = Utility.twoBytesToInt(new byte[]{magicCookieBytes[0], magicCookieBytes[1]});
         this.xPort = reflexivePort ^ mostSign;
-        System.out.println("\nthe xport is : " + xPort);
         //Then convert to network byte order.
         byte[] bytes = Utility.intToTwoBytes(xPort);
         return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).array();
-
-        //Network byte order uses always big endian.
-        //return ByteBuffer.allocate(2).putLong(xpport).order(ByteOrder.BIG_ENDIAN).array();
-        //return ByteBuffer.allocate(2).putInt(xPort).order(ByteOrder.BIG_ENDIAN).array();
     }
 
     private static int computeReflexivePort(int xPort) {

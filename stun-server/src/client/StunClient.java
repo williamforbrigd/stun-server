@@ -1,6 +1,7 @@
 package client;
 
 import message.StunMessage;
+import stunattributes.ErrorCode;
 import stunattributes.XorMappedAddress;
 
 import java.io.IOException;
@@ -75,6 +76,13 @@ public class StunClient {
                     System.out.println("\nThe public address is: " + address.getReflexiveAddress());
                     System.out.println("The port is: " + address.getReflexivePort());
                     return address;
+                } else if(message.getMessageClass() == StunMessage.MessageClass.ERROR_RESPONSE) {
+                    byte[] errorCodeBuffer = new byte[8];
+                    System.arraycopy(buffer, 20, errorCodeBuffer, 0, 8);
+                    ErrorCode errorCode = ErrorCode.parseErrorMessage(errorCodeBuffer);
+                    System.out.println("The Error Message is: " + errorCode.getErrorMessage());
+                    System.out.println("THe reason phrase is: " + errorCode.getReasonPhrase());
+                    return null;
                 }
             } catch(IOException e) {
                 System.out.println("Could not send/receive packet: " + e.getMessage());

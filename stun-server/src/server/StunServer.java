@@ -2,11 +2,13 @@ package server;
 
 import message.StunMessage;
 import message.Utility;
+import stunattributes.ErrorCode;
 import stunattributes.XorMappedAddress;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * The reflexive transport address is the public IP address and port created by the NAT closest to the server.
@@ -51,7 +53,6 @@ public class StunServer {
                         xorAddress = new XorMappedAddress(XorMappedAddress.IPv6_FAMILY, reflexivePort, reflexiveAddress, message.getTransactionID());
                         messageLength = ByteBuffer.wrap(xorAddress.getBuffer()).getInt();
                     }
-                    System.out.println("Message length: " + messageLength);
                     StunMessage response = new StunMessage(StunMessage.MessageClass.SUCCESS_RESPONSE, messageLength);
                     byte[] header = response.createHeader();
                     buffer = response.getBuffer();
@@ -59,6 +60,12 @@ public class StunServer {
                     System.arraycopy(header, 0, buffer, 0, header.length);
                     System.arraycopy(xorBuffer, 0, buffer, header.length, xorBuffer.length);
 
+                    send = new DatagramPacket(buffer, buffer.length, reflexiveAddress, reflexivePort);
+                    socket.send(send);
+                } else if(message.getMessageClass() == StunMessage.MessageClass.ERROR_RESPONSE) {
+                    String msg = "The stun message header does not follow the rules for the STUN message structure";
+                    ErrorCode errorCode = new ErrorCode(420, msg);
+                    buffer = errorCode.getBuffer();
                     send = new DatagramPacket(buffer, buffer.length, reflexiveAddress, reflexivePort);
                     socket.send(send);
                 }
