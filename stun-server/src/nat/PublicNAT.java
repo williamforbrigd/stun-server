@@ -21,7 +21,7 @@ public class PublicNAT {
         this.publicNatAddress = InetAddress.getLocalHost();
     }
 
-    public void start() throws IOException {
+    public void start() {
         try {
             socket = new DatagramSocket(1252);
             DatagramPacket send, receive;

@@ -53,7 +53,7 @@ public class StunClient {
 
     }
 
-    public void start() {
+    public ReflexiveAddress start() {
         try {
             socket = new DatagramSocket(this.privateClientPort);
             DatagramPacket receive, send;
@@ -66,16 +66,15 @@ public class StunClient {
                 byte[] buffer = new byte[StunMessage.BUFFER_LENGTH];
                 receive = new DatagramPacket(buffer, buffer.length);
                 socket.receive(receive);
-                System.out.println(new String(receive.getData(), 0, receive.getLength()));
                 header = new byte[20];
                 System.arraycopy(buffer, 0, header, 0, 20);
                 StunMessage message = StunMessage.parseHeader(header);
                 if(message.getMessageClass() == StunMessage.MessageClass.SUCCESS_RESPONSE) {
-                    //TODO: parse the message
                     ReflexiveAddress address = XorMappedAddress.parseXorMappedAttribute(buffer, message.getTransactionID());
-                    if(address == null) return;
-                    System.out.println("The public address is: " + address.getReflexiveAddress());
+                    if(address == null) return null;
+                    System.out.println("\nThe public address is: " + address.getReflexiveAddress());
                     System.out.println("The port is: " + address.getReflexivePort());
+                    return address;
                 }
             } catch(IOException e) {
                 System.out.println("Could not send/receive packet: " + e.getMessage());
@@ -83,6 +82,7 @@ public class StunClient {
         } catch(SocketException e) {
             System.out.println("Could not create client socket: " + e.getMessage());
         }
+        return null;
     }
 
     public static void main(String[] args) throws IOException {

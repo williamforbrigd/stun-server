@@ -28,4 +28,8 @@ public class ReflexiveAddress {
     public void setReflexivePort(int reflexivePort) {
         this.reflexivePort = reflexivePort;
     }
+
+    public String toString() {
+        return "Address: " + reflexiveAddress + "\n" + "Port: " + reflexivePort;
+    }
 }

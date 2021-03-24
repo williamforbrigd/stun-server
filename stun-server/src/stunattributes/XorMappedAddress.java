@@ -18,7 +18,7 @@ import java.nio.ByteOrder;
  *      |                X-Address (Variable)
  *      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-public class XorMappedAddress extends StunAttribute {
+public class XorMappedAddress {
     private int family;
     private int xPort;
     private InetAddress xAddress;
@@ -73,7 +73,8 @@ public class XorMappedAddress extends StunAttribute {
         this.xPort = reflexivePort ^ mostSign;
         System.out.println("\nthe xport is : " + xPort);
         //Then convert to network byte order.
-        return Utility.intToTwoBytes(xPort);
+        byte[] bytes = Utility.intToTwoBytes(xPort);
+        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).array();
 
         //Network byte order uses always big endian.
         //return ByteBuffer.allocate(2).putLong(xpport).order(ByteOrder.BIG_ENDIAN).array();
@@ -103,22 +104,14 @@ public class XorMappedAddress extends StunAttribute {
             mapped = Utility.fourBytesToLong(bytes);
             xAddressValue = mapped ^ StunMessage.MAGIC_COOKIE;
 
-            //TODO remove this that was used for debugging.
-            byte[] bytes1 = Utility.longToFourBytes(xAddressValue);
-            try {
-                System.out.println(InetAddress.getByAddress(bytes1));
-            } catch(UnknownHostException e) {
-                e.printStackTrace();
-            }
-            return bytes1;
-            //return ByteBuffer.allocate(4).putLong(addressValue).array();
+            return Utility.longToFourBytes(xAddressValue);
         } else if(this.family == IPv6_FAMILY && bytes != null) {
             //IPv6 address is 16 bytes
             //Magic cookie is 4 bytes. Transaction id is 12 bytes. cookie + id = 16 bytes
             mapped = ByteBuffer.wrap(bytes).getInt();
             xAddressValue = mapped ^ (StunMessage.MAGIC_COOKIE + transactionID);
 
-            //TODO: this gives BufferOverflow
+            //this gives BufferOverflow
             return ByteBuffer.allocate(16).putLong(xAddressValue).array();
         }
         return null;
@@ -153,8 +146,6 @@ public class XorMappedAddress extends StunAttribute {
         int family = Utility.byteToInt(buffer[21]);
         int xPort = Utility.twoBytesToInt(new byte[]{buffer[22], buffer[23]});
         int reflexivePort = computeReflexivePort(xPort);
-        System.out.println("The xport is: " + xPort);
-        System.out.println("The reflexive port is: " + reflexivePort);
         if(family == XorMappedAddress.IPv4_FAMILY) {
             byte[] xAddressBytes = new byte[4];
             System.arraycopy(buffer, 24, xAddressBytes, 0, 4);

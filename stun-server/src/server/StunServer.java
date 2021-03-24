@@ -7,8 +7,6 @@ import stunattributes.XorMappedAddress;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
 
 /**
  * The reflexive transport address is the public IP address and port created by the NAT closest to the server.

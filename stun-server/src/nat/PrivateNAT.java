@@ -2,11 +2,8 @@ package nat;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 
 import message.StunMessage;
-
-import javax.xml.crypto.Data;
 
 /**
  * NAT that is connected to the private net.

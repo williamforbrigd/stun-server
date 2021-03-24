@@ -1,13 +1,5 @@
 package message;
 
-import client.ReflexiveAddress;
-import jdk.jshell.execution.Util;
-import stunattributes.XorMappedAddress;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-
 /**
  * Class for message.StunMessage
  *
@@ -136,12 +128,10 @@ public class StunMessage {
             return false;
     }
 
-    //TODO modify this if the header does not obey one of the rules for Section 6.
     public static StunMessage parseHeader(byte[] header) {
         byte[] messageType = new byte[2];
         System.arraycopy(header, 0, messageType, 0, 2);
 
-        //TODO: Check that the two first bits are 0.
         if(!checkTwoFirstBits(messageType[0])) return null;
 
         int msgType = Utility.twoBytesToInt(messageType);
